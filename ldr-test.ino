@@ -24,7 +24,7 @@ void setup() {
 }
 
 void loop() {
-  
+  // Nothing to do here…
 }
 
 void setRxTimer() {             // Timer3
