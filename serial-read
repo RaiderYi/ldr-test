@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""
+Serial port reader
+"""
+
+import argparse
+from collections import OrderedDict
+import sys
+
+import serial
+
+
+# Default values
+DEFAULT_BAUD = 115200
+DEFAULT_BYTE_SIZE = serial.EIGHTBITS
+DEFAULT_PARITY = serial.PARITY_NONE
+DEFAULT_STOP_BITS = serial.STOPBITS_ONE
+DEFAULT_TIMEOUT = None
+
+# Possible value lists
+BAUD_LIST = [4800, 9600, 19200, 38400, 57600, 115200]
+BYTE_SIZE_LIST = [serial.FIVEBITS, serial.SIXBITS, serial.SEVENBITS, serial.EIGHTBITS]
+PARITY_LIST = OrderedDict([
+    ('none', serial.PARITY_NONE),
+    ('even', serial.PARITY_EVEN),
+    ('odd', serial.PARITY_ODD),
+    ('mark', serial.PARITY_MARK),
+    ('space', serial.PARITY_SPACE)])
+STOP_LIST = [serial.STOPBITS_ONE, serial.STOPBITS_ONE_POINT_FIVE, serial.STOPBITS_TWO]
+
+
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Serial port reader')
+    parser.add_argument('port', help='serial port device to read from')
+    parser.add_argument('-f', '--file', metavar='OUTPUT', type=argparse.FileType('w'), default=None, help='file to write the data to [stdout]')
+    parser.add_argument('-b', '--baud', metavar='BAUD', type=int, choices=BAUD_LIST, default=DEFAULT_BAUD, help='serial port baud rate')
+    parser.add_argument('-s', '--byte-size', metavar='BITS', dest='byte', type=int, choices=BYTE_SIZE_LIST, default=DEFAULT_BYTE_SIZE, help='number of data bits')
+    parser.add_argument('-p', '--parity', metavar='PARITY', choices=PARITY_LIST.keys(), help='parity check')
+    parser.add_argument('-S', '--stop-bits', metavar='BITS', dest='stop', type=float, choices=STOP_LIST, default=DEFAULT_STOP_BITS, help='number of stop bits')
+    parser.add_argument('-t', '--timeout', default=DEFAULT_TIMEOUT, type=float, help='serial port timeout in seconds')
+    parser.add_argument('-x', '--xon-xoff', action='store_true', dest='x', help='enable software flow control')
+    parser.add_argument('-r', '--rts-cts', action='store_true', dest='rts', help='enable hardware (RTS/CTS) flow control')
+    parser.add_argument('-d', '--dsr-dtr', action='store_true', dest='dsr', help='enable hardware (DSR/DTR) flow control')
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    args = parse_args()
+
+    try:
+        s = serial.Serial(args.port, baudrate=args.baud)
+    except serial.SerialException as ex:
+        print(ex)
+        exit(1)
+    except ValueError as ex:
+        print(ex)
+        exit(2)
+
+    if not args.file:
+        args.file = sys.stdout
+    while s.in_waiting > 0:
+        args.file.write(s.read())
